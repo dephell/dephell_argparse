@@ -1,4 +1,5 @@
 import re
+from argparse import ArgumentParser
 from logging import getLogger
 
 
@@ -32,9 +33,10 @@ class CommandHandler:
         return worded.rsplit(' ', maxsplit=1)[0].lower()
 
     @classmethod
-    def get_parser(cls, parser):
+    def get_parser(cls) -> ArgumentParser:
         name = cls._get_name()
         url = 'https://dephell.org/docs/cmd-{}.html'.format(name.replace(' ', '-'))
+        usage = ''
         usage = 'dephell {} [OPTIONS] {}'.format(name, usage.upper())
         return ArgumentParser(
             prog='dephell ' + name,
@@ -44,7 +46,7 @@ class CommandHandler:
         )
 
     @classmethod
-    def build_parser(cls, parser):
+    def build_parser(cls, parser: ArgumentParser) -> ArgumentParser:
         raise NotImplementedError
 
     def __call__(self) -> bool:

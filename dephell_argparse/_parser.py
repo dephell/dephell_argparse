@@ -9,10 +9,12 @@ class Parser(argparse.ArgumentParser):
     prefixes = MappingProxyType(dict(
         usage='usage: ',
         commands='commands:',
+        url='docs: ',
     ))
 
-    def __init__(self, **kwargs):
+    def __init__(self, *, url=None, **kwargs):
         super().__init__(**kwargs)
+        self.url = url
         self._handlers = []
 
     def _make_command_handler(self, handler, name=None, parser=None) -> CommandHandler:
@@ -50,6 +52,9 @@ class Parser(argparse.ArgumentParser):
             prefix=Fore.YELLOW + prefix + Fore.RESET,
         )
         formatter.add_text(self.description)
+        if self.url:
+            prefix = self.prefixes['url']
+            formatter.add_text(Fore.YELLOW + prefix + Fore.RESET + self.url)
 
         for action_group in self._action_groups:
             # do not show comma-separated commands list
@@ -59,8 +64,8 @@ class Parser(argparse.ArgumentParser):
             formatter.add_text(action_group.description)
             formatter.add_arguments(action_group._group_actions)
             formatter.end_section()
-        formatter.add_text(self.epilog)
         self._format_commands(formatter=formatter)
+        formatter.add_text(self.epilog)
         return formatter.format_help()
 
     def _get_formatter(self) -> argparse.HelpFormatter:
