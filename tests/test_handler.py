@@ -42,3 +42,9 @@ def test_description():
         """
 
     assert Handler().description == 'test me!'
+
+    class Handler:
+        """test me!
+        """
+
+    assert CommandHandler(handler=Handler()).description == 'test me!'
