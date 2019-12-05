@@ -1,2 +1,7 @@
 __pycache__
 .mypy_cache/
+setup.py
+dist/
+.pytest_cache/
+*.egg-info
+README.rst
