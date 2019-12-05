@@ -1,5 +1,5 @@
 from collections import Counter, defaultdict
-from typing import FrozenSet, Iterable, Optional, Tuple
+from typing import DefaultDict, FrozenSet, Iterable, Optional, Tuple, List
 
 from ._cached_property import cached_property
 
@@ -59,7 +59,7 @@ class Command:
                 return command_name, size
 
         # specified the only one word from command
-        commands_by_parts = defaultdict(list)
+        commands_by_parts = defaultdict(list)  # type: DefaultDict[str, List[str]]
         for command_name in self.commands:
             for part in command_name.split():
                 commands_by_parts[part].append(command_name)

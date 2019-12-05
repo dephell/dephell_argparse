@@ -13,7 +13,6 @@ REX_WORD = re.compile(r'([a-z\d])([A-Z])')
 
 class CommandHandler:
     logger = getLogger('dephell_argparse')
-    parser = None
     stream = sys.stdout
 
     def __init__(self, *, handler=None, argv=None, **kwargs):

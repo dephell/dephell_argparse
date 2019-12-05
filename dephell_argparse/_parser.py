@@ -1,7 +1,7 @@
 import argparse
 import sys
 from types import MappingProxyType
-from typing import Iterable
+from typing import Sequence, Optional
 
 from ._colors import Fore
 from ._handler import CommandHandler
@@ -55,12 +55,13 @@ class Parser(argparse.ArgumentParser):
         formatter = self._get_formatter()
         colorize = (Fore.YELLOW + '{}' + Fore.RESET).format
 
-        formatter.add_usage(
-            usage=self.usage,
-            actions=self._actions,
-            groups=self._mutually_exclusive_groups,
-            prefix=colorize(self.prefixes['usage']),
-        )
+        if self.usage:
+            formatter.add_usage(
+                usage=self.usage,
+                actions=self._actions,
+                groups=self._mutually_exclusive_groups,
+                prefix=colorize(self.prefixes['usage']),
+            )
 
         if command and not command.match and not command.group:
             msg = '{}ERROR:{} command not found'
@@ -72,7 +73,8 @@ class Parser(argparse.ArgumentParser):
             formatter.add_text(colorize(self.prefixes['url']) + self.url)
 
         for action_group in self._action_groups:
-            formatter.start_section(colorize(action_group.title.upper()))
+            title = action_group.title or ''
+            formatter.start_section(colorize(title.upper()))
             formatter.add_text(action_group.description)
             formatter.add_arguments(action_group._group_actions)
             formatter.end_section()
@@ -114,7 +116,7 @@ class Parser(argparse.ArgumentParser):
             ))
         formatter.end_section()
 
-    def get_command(self, argv: Iterable[str] = None) -> CommandHandler:
+    def get_command(self, argv: Sequence[str] = None) -> Optional[CommandHandler]:
         if argv is None:
             argv = sys.argv[1:]
         command = Command(argv=argv, commands=self._handlers.keys())
@@ -124,7 +126,7 @@ class Parser(argparse.ArgumentParser):
         handler = handler.copy(argv=command.argv)
         return handler
 
-    def handle(self, argv: Iterable[str] = None) -> int:
+    def handle(self, argv: Sequence[str] = None) -> int:
         if argv is None:
             argv = sys.argv[1:]
 
@@ -138,7 +140,7 @@ class Parser(argparse.ArgumentParser):
 
         # rewrite command to get help about command
         if len(argv) >= 1 and argv[0] in ('--help', 'help'):
-            argv = argv[1:] + ['--help']
+            argv = list(argv[1:]) + ['--help']
 
         # get command
         handler = self.get_command(argv=argv)
