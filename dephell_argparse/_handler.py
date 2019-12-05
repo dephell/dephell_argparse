@@ -14,6 +14,7 @@ REX_WORD = re.compile(r'([a-z\d])([A-Z])')
 class CommandHandler:
     logger = getLogger('dephell_argparse')
     parser = None
+    stream = sys.stdout
 
     def __init__(self, *, handler=None, argv=None, **kwargs):
         self.__dict__.update()
@@ -33,6 +34,11 @@ class CommandHandler:
         if self.handler is not None:
             return self.handler(self.argv)
         raise NotImplementedError
+
+    # helpers for handler
+
+    def print(self, *args, sep=' ', end='\n', file=None, flush=False) -> None:
+        print(*args, sep=sep, end=end, file=file or self.stream, flush=flush)
 
     # defaults
 

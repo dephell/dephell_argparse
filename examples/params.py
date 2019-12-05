@@ -11,7 +11,7 @@ class SumCommand(CommandHandler):
 
     def __call__(self):
         result = sum(self.args.numbers)
-        print(result)
+        self.print(result)
         return 0
 
 
