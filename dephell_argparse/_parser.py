@@ -100,9 +100,11 @@ class Parser(argparse.ArgumentParser):
         if argv is None:
             argv = sys.argv[1:]
         command = Command(argv=argv, commands=self._handlers.keys())
-        if command.match:
-            return self._handlers[command.match]
-        ...
+        if not command.match:
+            return None
+        handler = self._handlers[command.match]
+        handler = handler.copy(argv=command.argv)
+        return handler
 
     def handle(self, argv: Iterable[str] = None) -> int:
         if argv is None:

@@ -1,5 +1,5 @@
 import re
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from logging import getLogger
 
 
@@ -33,6 +33,10 @@ class CommandHandler:
     @property
     def summary(self) -> str:
         return self.parser.description.split('\n')[0]
+
+    @property
+    def args(self) -> Namespace:
+        return self.parser.parse_args(self.argv)
 
     def get_name(self) -> str:
         raw = type(self).__name__

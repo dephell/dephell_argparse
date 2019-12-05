@@ -30,7 +30,7 @@ class Command:
 
     @property
     def argv(self) -> Tuple[str, ...]:
-        return self.argv[self.words:]
+        return self._argv[self.words:]
 
     @property
     def group(self) -> Optional[str]:
