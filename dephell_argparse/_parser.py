@@ -13,6 +13,7 @@ class Parser(argparse.ArgumentParser):
         usage='usage: ',
         commands='commands',
         url='docs: ',
+        description='description: ',
     ))
     codes = MappingProxyType(dict(
         help=0,
@@ -49,21 +50,21 @@ class Parser(argparse.ArgumentParser):
         self._handlers[handler.name] = handler
 
     def format_help(self):
+        colorize = (Fore.YELLOW + '{}' + Fore.RESET).format
         formatter = self._get_formatter()
-        prefix = self.prefixes['usage']
         formatter.add_usage(
             usage=self.usage,
             actions=self._actions,
             groups=self._mutually_exclusive_groups,
-            prefix=Fore.YELLOW + prefix + Fore.RESET,
+            prefix=colorize(self.prefixes['usage']),
         )
-        formatter.add_text(self.description)
+        if self.description:
+            formatter.add_text(colorize(self.prefixes['description']) + self.description)
         if self.url:
-            prefix = self.prefixes['url']
-            formatter.add_text(Fore.YELLOW + prefix + Fore.RESET + self.url)
+            formatter.add_text(colorize(self.prefixes['url']) + self.url)
 
         for action_group in self._action_groups:
-            formatter.start_section(Fore.YELLOW + action_group.title + Fore.RESET)
+            formatter.start_section(colorize(action_group.title))
             formatter.add_text(action_group.description)
             formatter.add_arguments(action_group._group_actions)
             formatter.end_section()
@@ -117,6 +118,10 @@ class Parser(argparse.ArgumentParser):
         if len(argv) == 1 and argv[0] in ('--help', 'help', 'commands'):
             print(self.format_help())
             return self.codes['help']
+
+        # rewrite command to get help about command
+        if len(argv) >= 1 and argv[0] in ('--help', 'help'):
+            argv = argv[1:] + ['--help']
 
         # get command
         command = self.get_command(argv=argv)

@@ -1,13 +1,15 @@
 from collections import Counter, defaultdict
 from typing import FrozenSet, Iterable, Optional, Tuple
 
+from ._cached_property import cached_property
+
 
 class Command:
     def __init__(self, argv: Iterable[str], commands: Iterable[str]):
         self._argv = tuple(argv)
         self.commands = {c.lower() for c in commands}
 
-    @property
+    @cached_property
     def groups(self) -> FrozenSet[str]:
         groups = set()
         for command in self.commands:
@@ -46,7 +48,7 @@ class Command:
         diff = sum(counter_diff.values())
         return diff <= threshold
 
-    @property
+    @cached_property
     def _command_name_and_size(self) -> Optional[Tuple[str, int]]:
         if not self._argv:
             return None
@@ -74,7 +76,7 @@ class Command:
 
         return None
 
-    @property
+    @cached_property
     def guessess(self) -> FrozenSet[str]:
         guesses = set()
 
