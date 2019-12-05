@@ -1,6 +1,9 @@
+import os
 import re
+import sys
 from argparse import ArgumentParser, Namespace
 from logging import getLogger
+from typing import Optional
 
 
 REX_WORD = re.compile(r'([a-z\d])([A-Z])')
@@ -46,17 +49,24 @@ class CommandHandler:
         normalized = worded.rsplit(' ', maxsplit=1)[0].lower()
         return normalized
 
+    def get_prog(self) -> str:
+        return os.path.basename(sys.argv[0])
+
     def get_parser(self) -> ArgumentParser:
-        name = self.get_name()
-        url = 'https://dephell.org/docs/cmd-{}.html'.format(name.replace(' ', '-'))
-        usage = ''
-        usage = 'dephell {} [OPTIONS] {}'.format(name, usage.upper())
-        return ArgumentParser(
-            prog='dephell ' + name,
-            usage=usage + '\n\n\ndocs: ' + url,
+        from ._parser import Parser
+
+        return Parser(
+            prog=self.get_prog() + ' ' + self.get_name(),
+            usage=self.get_usage(),
             description=self.get_description(),
-            epilog=url,
+            url=self.get_url(),
         )
+
+    def get_url(self) -> Optional[str]:
+        return None
+
+    def get_usage(self) -> Optional[str]:
+        return None
 
     def get_description(self):
         doc = type(self).__doc__

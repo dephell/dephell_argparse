@@ -2,7 +2,7 @@ from dephell_argparse import Parser, CommandHandler
 
 
 class SumCommand(CommandHandler):
-    """Add two numbers
+    """Return sum of numbers
     """
     @staticmethod
     def build_parser(parser: Parser) -> Parser:
