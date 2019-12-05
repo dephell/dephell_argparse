@@ -10,10 +10,12 @@ from ._command import Command
 
 class Parser(argparse.ArgumentParser):
     prefixes = MappingProxyType(dict(
-        usage='usage: ',
-        commands='commands',
-        url='docs: ',
-        description='description: ',
+        usage='USAGE: ',
+        commands='COMMANDS',
+        group='COMMANDS IN GROUP',
+        guesses='POSSIBLE COMMANDS',
+        url='DOCS: ',
+        description='DESCRIPTION: ',
     ))
     codes = MappingProxyType(dict(
         help=0,
@@ -49,26 +51,32 @@ class Parser(argparse.ArgumentParser):
         )
         self._handlers[handler.name] = handler
 
-    def format_help(self):
-        colorize = (Fore.YELLOW + '{}' + Fore.RESET).format
+    def format_help(self, command: Command = None):
         formatter = self._get_formatter()
+        colorize = (Fore.YELLOW + '{}' + Fore.RESET).format
+
         formatter.add_usage(
             usage=self.usage,
             actions=self._actions,
             groups=self._mutually_exclusive_groups,
             prefix=colorize(self.prefixes['usage']),
         )
+
+        if command and not command.match and not command.group:
+            msg = '{}ERROR:{} command not found'
+            formatter.add_text(msg.format(Fore.RED, Fore.RESET))
+
         if self.description:
             formatter.add_text(colorize(self.prefixes['description']) + self.description)
         if self.url:
             formatter.add_text(colorize(self.prefixes['url']) + self.url)
 
         for action_group in self._action_groups:
-            formatter.start_section(colorize(action_group.title))
+            formatter.start_section(colorize(action_group.title.upper()))
             formatter.add_text(action_group.description)
             formatter.add_arguments(action_group._group_actions)
             formatter.end_section()
-        self._format_commands(formatter=formatter)
+        self._format_commands(formatter=formatter, command=command)
         formatter.add_text(self.epilog)
         return formatter.format_help()
 
@@ -77,13 +85,22 @@ class Parser(argparse.ArgumentParser):
         formatter._width = 120
         return formatter
 
-    def _format_commands(self, formatter: argparse.HelpFormatter) -> None:
+    def _format_commands(self, formatter: argparse.HelpFormatter,
+                         command: Command = None) -> None:
         prefix = self.prefixes['commands']
+        if command:
+            if command.group:
+                prefix = self.prefixes['group']
+            elif command.guesses:
+                prefix = self.prefixes['guesses']
+
         formatter.start_section(Fore.YELLOW + prefix + Fore.RESET)
         prev_group = ''
         colors = {True: Fore.GREEN, False: Fore.BLUE}
         color = True
         for name, handler in self._handlers.items():
+            if command and command.guesses and name not in command.guesses:
+                continue
             # switch colors for every group
             group, _, subname = name.rpartition(' ')
             if group != prev_group:
@@ -124,13 +141,14 @@ class Parser(argparse.ArgumentParser):
             argv = argv[1:] + ['--help']
 
         # get command
-        command = self.get_command(argv=argv)
-        if not command:
-            print(self.format_help())
+        handler = self.get_command(argv=argv)
+        if not handler:
+            command = Command(argv=argv, commands=self._handlers.keys())
+            print(self.format_help(command=command))
             return self.codes['unknown']
 
         # run command
-        result = command()
+        result = handler()
         if type(result) is bool:
             if result is True:
                 return self.codes['ok']

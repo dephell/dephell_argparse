@@ -13,7 +13,7 @@ class Command:
     def groups(self) -> FrozenSet[str]:
         groups = set()
         for command in self.commands:
-            group, _, _ = command.partiton(' ')
+            group, _, _ = command.partition(' ')
             if group:
                 groups.add(group)
         return frozenset(groups)
@@ -77,7 +77,7 @@ class Command:
         return None
 
     @cached_property
-    def guessess(self) -> FrozenSet[str]:
+    def guesses(self) -> FrozenSet[str]:
         guesses = set()
 
         if self.group:
@@ -87,24 +87,30 @@ class Command:
             return frozenset(guesses)
 
         # typed only one word from two words
-        for command_name in self.commands:
-            _, _, subcommand_name = command_name.rpartition(' ')
-            if self.name == subcommand_name:
-                guesses.add(command_name)
+        for name in self.argv[:2]:
+            for command_name in self.commands:
+                _, _, subcommand_name = command_name.rpartition(' ')
+                if name == subcommand_name:
+                    guesses.add(command_name)
         if guesses:
             return frozenset(guesses)
 
         # typed fully but with too many mistakes
-        for command_name in self.commands:
-            if self._similar(command_name, threshold=3):
-                guesses.add(command_name)
+        for size in 1, 2:
+            name = ' '.join(self._argv[:size])
+            for command_name in self.commands:
+                if self._similar(name, command_name, threshold=3):
+                    guesses.add(command_name)
         if guesses:
             return frozenset(guesses)
 
         # typed only one word from two, and it contains typos
-        for command_name in self.commands:
-            for part in command_name.split():
-                if self._similar(part):
-                    guesses.add(command_name)
+        for name in self.argv[:2]:
+            for command_name in self.commands:
+                for part in command_name.split():
+                    if self._similar(name, part):
+                        guesses.add(command_name)
         if guesses:
             return frozenset(guesses)
+
+        return frozenset()
