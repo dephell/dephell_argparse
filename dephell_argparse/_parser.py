@@ -1,7 +1,7 @@
 import argparse
 import sys
 from types import MappingProxyType
-from typing import Sequence, Optional
+from typing import Dict, Sequence, Optional, IO
 
 from ._colors import Fore
 from ._handler import CommandHandler
@@ -24,12 +24,21 @@ class Parser(argparse.ArgumentParser):
         fail=2,
     ))
 
-    def __init__(self, *, url=None, **kwargs):
+    def __init__(self, *, url: str = None, stream: IO = sys.stderr, **kwargs):
         super().__init__(**kwargs)
         self.url = url
-        self._handlers = dict()
+        self.stream = stream
+        self._handlers = dict()  # type: Dict[str, CommandHandler]
 
-    def _make_command_handler(self, handler, name=None, parser=None) -> CommandHandler:
+    def _print_message(self, message: str, file: IO = None) -> None:
+        if not message:
+            return
+        if file is None:
+            file = self.stream
+        file.write(message)
+
+    def _make_command_handler(self, handler, name: str = None,
+                              parser: argparse.ArgumentParser = None) -> CommandHandler:
         if isinstance(handler, CommandHandler):
             if name is not None:
                 raise ValueError('cannot re-define name for command')
@@ -132,10 +141,10 @@ class Parser(argparse.ArgumentParser):
 
         # print help
         if not argv:
-            print(self.format_help())
+            self._print_message(self.format_help())
             return self.codes['help']
         if len(argv) == 1 and argv[0] in ('--help', 'help', 'commands'):
-            print(self.format_help())
+            self._print_message(self.format_help())
             return self.codes['help']
 
         # rewrite command to get help about command
@@ -146,7 +155,7 @@ class Parser(argparse.ArgumentParser):
         handler = self.get_command(argv=argv)
         if not handler:
             command = Command(argv=argv, commands=self._handlers.keys())
-            print(self.format_help(command=command))
+            self._print_message(self.format_help(command=command))
             return self.codes['unknown']
 
         # run command

@@ -3,7 +3,7 @@ import re
 import sys
 from argparse import ArgumentParser, Namespace
 from logging import getLogger
-from typing import Optional
+from typing import Optional, IO, Iterable
 
 from ._cached_property import cached_property
 
@@ -14,11 +14,13 @@ REX_WORD = re.compile(r'([a-z\d])([A-Z])')
 class CommandHandler:
     logger = getLogger('dephell_argparse')
     stream = sys.stdout
+    argv = None
 
-    def __init__(self, *, handler=None, argv=None, **kwargs):
+    def __init__(self, *, handler=None, argv: Iterable[str] = None, **kwargs):
         self.__dict__.update()
         self.handler = handler
-        self.argv = argv
+        if argv is not None:
+            self.argv = tuple(argv)
 
     def copy(self, **kwargs) -> 'CommandHandler':
         params = vars(self).copy()
@@ -36,8 +38,9 @@ class CommandHandler:
 
     # helpers for handler
 
-    def print(self, *args, sep=' ', end='\n', file=None, flush=False) -> None:
-        print(*args, sep=sep, end=end, file=file or self.stream, flush=flush)
+    def print(self, *args, sep: str = ' ', end: str = '\n',
+              stream: IO = None, flush: bool = False) -> None:
+        print(*args, sep=sep, end=end, file=stream or self.stream, flush=flush)
 
     # defaults
 
@@ -55,12 +58,19 @@ class CommandHandler:
 
     @cached_property
     def name(self) -> str:
-        raw = type(self).__name__
         if self.handler is not None:
             raw = self.handler.__name__
-        worded = REX_WORD.sub(r'\1 \2', raw)
-        normalized = worded.rsplit(' ', maxsplit=1)[0].lower()
-        return normalized
+            result = raw.split('_')
+        else:
+            raw = type(self).__name__
+            result = REX_WORD.sub(r'\1 \2', raw).split()
+        result = [word.strip() for word in result]
+        result = [word.lower() for word in result if word]
+        if result[-1] == 'handler':
+            result = result[:-1]
+        if result[-1] == 'command':
+            result = result[:-1]
+        return ' '.join(result)
 
     @cached_property
     def prog(self) -> str:
