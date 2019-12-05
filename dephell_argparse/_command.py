@@ -67,8 +67,9 @@ class Command:
 
         # typo in command name
         for size in 1, 2:
+            command_name = ' '.join(self._argv[:size])
             for command_guess in self.commands:
-                if self._similar(command_guess):
+                if self._similar(command_name, command_guess):
                     return command_guess, size
 
         return None

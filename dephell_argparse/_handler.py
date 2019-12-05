@@ -50,9 +50,23 @@ class CommandHandler:
         return ArgumentParser(
             prog='dephell ' + name,
             usage=usage + '\n\n\ndocs: ' + url,
-            description=type(self).__doc__,
+            description=self.get_description(),
             epilog=url,
         )
+
+    def get_description(self):
+        doc = type(self).__doc__
+        if doc is not None:
+            return doc
+        if self.handler is None:
+            return ''
+        doc = self.handler.__doc__
+        if doc is not None:
+            return doc
+        doc = type(self.handler).__doc__
+        if doc is not None:
+            return doc
+        return ''
 
     @classmethod
     def build_parser(cls, parser: ArgumentParser) -> ArgumentParser:

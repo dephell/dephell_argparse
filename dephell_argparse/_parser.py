@@ -11,8 +11,14 @@ from ._command import Command
 class Parser(argparse.ArgumentParser):
     prefixes = MappingProxyType(dict(
         usage='usage: ',
-        commands='commands:',
+        commands='commands',
         url='docs: ',
+    ))
+    codes = MappingProxyType(dict(
+        help=0,
+        unknown=1,
+        ok=0,
+        fail=2,
     ))
 
     def __init__(self, *, url=None, **kwargs):
@@ -57,9 +63,6 @@ class Parser(argparse.ArgumentParser):
             formatter.add_text(Fore.YELLOW + prefix + Fore.RESET + self.url)
 
         for action_group in self._action_groups:
-            # do not show comma-separated commands list
-            if action_group.title == 'positional arguments':
-                continue
             formatter.start_section(Fore.YELLOW + action_group.title + Fore.RESET)
             formatter.add_text(action_group.description)
             formatter.add_arguments(action_group._group_actions)
@@ -100,3 +103,29 @@ class Parser(argparse.ArgumentParser):
         if command.match:
             return self._handlers[command.match]
         ...
+
+    def handle(self, argv: Iterable[str] = None) -> int:
+        if argv is None:
+            argv = sys.argv[1:]
+
+        # print help
+        if not argv:
+            print(self.format_help())
+            return self.codes['help']
+        if len(argv) == 1 and argv[0] in ('--help', 'help', 'commands'):
+            print(self.format_help())
+            return self.codes['help']
+
+        # get command
+        command = self.get_command(argv=argv)
+        if not command:
+            print(self.format_help())
+            return self.codes['unknown']
+
+        # run command
+        result = command()
+        if type(result) is bool:
+            if result is True:
+                return self.codes['ok']
+            return self.codes['fail']
+        return result
