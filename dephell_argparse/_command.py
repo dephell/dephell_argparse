@@ -13,22 +13,14 @@ class Command:
     def groups(self) -> FrozenSet[str]:
         groups = set()
         for command in self.commands:
-            group, _, _ = command.partition(' ')
+            group, _, _ = command.rpartition(' ')
             if group:
                 groups.add(group)
         return frozenset(groups)
 
-    @property
+    @cached_property
     def words(self) -> int:
-        if not self._command_name_and_size:
-            return 0
-        return self._command_name_and_size[-1]
-
-    @property
-    def match(self) -> Optional[str]:
-        if not self._command_name_and_size:
-            return None
-        return self._command_name_and_size[0]
+        return len(self.match.split())
 
     @property
     def argv(self) -> Tuple[str, ...]:
@@ -41,7 +33,8 @@ class Command:
             return group
         return None
 
-    def _similar(self, cmd1: str, cmd2: str, threshold: int = 1) -> bool:
+    @staticmethod
+    def _similar(cmd1: str, cmd2: str, threshold: int = 1) -> bool:
         given = Counter(cmd1)
         guess = Counter(cmd2)
         counter_diff = (given - guess) + (guess - given)
@@ -49,14 +42,14 @@ class Command:
         return diff <= threshold
 
     @cached_property
-    def _command_name_and_size(self) -> Optional[Tuple[str, int]]:
+    def match(self) -> Optional[str]:
         if not self._argv:
             return None
 
-        for size, direction in ((1, 1), (2, 1), (2, -1)):
+        for size, direction in ((2, 1), (1, 1), (2, -1)):
             command_name = ' '.join(self._argv[:size][::direction])
             if command_name in self.commands:
-                return command_name, size
+                return command_name
 
         # specified the only one word from command
         commands_by_parts = defaultdict(list)  # type: DefaultDict[str, List[str]]
@@ -65,14 +58,14 @@ class Command:
                 commands_by_parts[part].append(command_name)
         command_names = commands_by_parts[self._argv[0]]
         if len(command_names) == 1:
-            return command_names[0], 1
+            return command_names[0]
 
         # typo in command name
-        for size in 1, 2:
+        for size in (1, 2):
             command_name = ' '.join(self._argv[:size])
             for command_guess in self.commands:
                 if self._similar(command_name, command_guess):
-                    return command_guess, size
+                    return command_guess
 
         return None
 
