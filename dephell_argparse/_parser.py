@@ -1,8 +1,11 @@
 import argparse
+import sys
 from types import MappingProxyType
+from typing import Iterable
 
 from ._colors import Fore
 from ._handler import CommandHandler
+from ._command import Command
 
 
 class Parser(argparse.ArgumentParser):
@@ -15,7 +18,7 @@ class Parser(argparse.ArgumentParser):
     def __init__(self, *, url=None, **kwargs):
         super().__init__(**kwargs)
         self.url = url
-        self._handlers = []
+        self._handlers = dict()
 
     def _make_command_handler(self, handler, name=None, parser=None) -> CommandHandler:
         if isinstance(handler, CommandHandler):
@@ -25,22 +28,19 @@ class Parser(argparse.ArgumentParser):
                 raise ValueError('cannot re-define parser for command')
             return handler
 
-        if issubclass(handler, CommandHandler):
+        if isinstance(handler, type) and issubclass(handler, CommandHandler):
             return handler(name=name, parser=parser)
 
-        if name is None:
-            raise ValueError('name required')
-        if parser is None:
-            raise ValueError('parser required')
         return CommandHandler(name=name, parser=parser, handler=handler)
 
     def add_command(self, handler, name: str = None,
                     parser: argparse.ArgumentParser = None) -> None:
-        self._handlers.append(self._make_command_handler(
+        handler = self._make_command_handler(
             handler=handler,
             name=name,
             parser=parser,
-        ))
+        )
+        self._handlers[handler.name] = handler
 
     def format_help(self):
         formatter = self._get_formatter()
@@ -79,16 +79,24 @@ class Parser(argparse.ArgumentParser):
         prev_group = ''
         colors = {True: Fore.GREEN, False: Fore.BLUE}
         color = True
-        for handler in self._handlers:
+        for name, handler in self._handlers.items():
             # switch colors for every group
-            group, _, subname = handler.name.rpartition(' ')
+            group, _, subname = name.rpartition(' ')
             if group != prev_group:
                 prev_group = group
                 color = not color
 
             formatter.add_argument(argparse.Action(
-                option_strings=[colors[color] + handler.name + Fore.RESET],
+                option_strings=[colors[color] + name + Fore.RESET],
                 dest='',
                 help=handler.summary,
             ))
         formatter.end_section()
+
+    def get_command(self, argv: Iterable[str] = None) -> CommandHandler:
+        if argv is None:
+            argv = sys.argv[1:]
+        command = Command(argv=argv, commands=self._handlers.keys())
+        if command.match:
+            return self._handlers[command.match]
+        ...

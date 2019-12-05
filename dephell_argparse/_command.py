@@ -3,8 +3,8 @@ from typing import FrozenSet, Iterable, Optional, Tuple
 
 
 class Command:
-    def __init__(self, name: str, commands: Iterable[str]):
-        self.name = name.lower()
+    def __init__(self, argv: Iterable[str], commands: Iterable[str]):
+        self._argv = tuple(argv)
         self.commands = {c.lower() for c in commands}
 
     @property
@@ -24,28 +24,35 @@ class Command:
 
     @property
     def match(self) -> Optional[str]:
-        if self._command_name_and_size:
-            return self._command_name_and_size[0]
+        if not self._command_name_and_size:
+            return None
+        return self._command_name_and_size[0]
+
+    @property
+    def argv(self) -> Tuple[str, ...]:
+        return self.argv[self.words:]
 
     @property
     def group(self) -> Optional[str]:
-        group, _, _ = self.name.partiton(' ')
+        group = self._argv[0]
         if group in self.groups:
             return group
         return None
 
-    def _similar(self, command: str, threshold: int = 1) -> bool:
-        given = Counter(self.name)
-        guess = Counter(command)
+    def _similar(self, cmd1: str, cmd2: str, threshold: int = 1) -> bool:
+        given = Counter(cmd1)
+        guess = Counter(cmd2)
         counter_diff = (given - guess) + (guess - given)
         diff = sum(counter_diff.values())
         return diff <= threshold
 
     @property
     def _command_name_and_size(self) -> Optional[Tuple[str, int]]:
-        argv = self.name.split()
+        if not self._argv:
+            return None
+
         for size, direction in ((1, 1), (2, 1), (2, -1)):
-            command_name = ' '.join(argv[:size][::direction])
+            command_name = ' '.join(self._argv[:size][::direction])
             if command_name in self.commands:
                 return command_name, size
 
@@ -54,7 +61,7 @@ class Command:
         for command_name in self.commands:
             for part in command_name.split():
                 commands_by_parts[part].append(command_name)
-        command_names = commands_by_parts[argv[0]]
+        command_names = commands_by_parts[self._argv[0]]
         if len(command_names) == 1:
             return command_names[0], 1
 
