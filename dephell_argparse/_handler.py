@@ -4,6 +4,8 @@ import sys
 from argparse import ArgumentParser, Namespace
 from logging import getLogger
 from typing import Optional, IO, Iterable
+from inspect import getdoc
+from textwrap import dedent
 
 from ._cached_property import cached_property
 
@@ -86,15 +88,16 @@ class CommandHandler:
 
     @cached_property
     def description(self) -> str:
-        doc = type(self).__doc__
+        doc = self._get_docstring()
+        return dedent(doc).strip()
+
+    def _get_docstring(self) -> str:
+        doc = getdoc(type(self))
         if doc is not None:
             return doc
         if self.handler is None:
             return ''
-        doc = self.handler.__doc__
-        if doc is not None:
-            return doc
-        doc = type(self.handler).__doc__
+        doc = getdoc(self.handler)
         if doc is not None:
             return doc
         return ''

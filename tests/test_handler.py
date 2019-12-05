@@ -28,3 +28,17 @@ def test_name_class(given: str, expected: str):
 def test_name_func(given: str, expected: str):
     cls = type(given, (), {})
     assert CommandHandler(handler=cls).name == expected
+
+
+def test_description():
+    def handler():
+        """test me!
+        """
+
+    assert CommandHandler(handler=handler).description == 'test me!'
+
+    class Handler(CommandHandler):
+        """test me!
+        """
+
+    assert Handler().description == 'test me!'
