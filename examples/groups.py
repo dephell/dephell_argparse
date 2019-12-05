@@ -1,5 +1,8 @@
+# built-in
 from functools import reduce
-from dephell_argparse import Parser, CommandHandler
+
+# project
+from dephell_argparse import CommandHandler, Parser
 
 
 parser = Parser()

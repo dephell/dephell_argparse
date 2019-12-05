@@ -1,11 +1,13 @@
+# built-in
 import argparse
 import sys
 from types import MappingProxyType
-from typing import Dict, Sequence, Optional, IO
+from typing import IO, Dict, Optional, Sequence
 
+# app
 from ._colors import Fore
-from ._handler import CommandHandler
 from ._command import Command
+from ._handler import CommandHandler
 
 
 class Parser(argparse.ArgumentParser):

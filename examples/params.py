@@ -1,4 +1,5 @@
-from dephell_argparse import Parser, CommandHandler
+# project
+from dephell_argparse import CommandHandler, Parser
 
 
 class SumCommand(CommandHandler):

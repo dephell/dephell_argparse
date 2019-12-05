@@ -1,3 +1,4 @@
+# app
 from ._handler import CommandHandler
 from ._parser import Parser
 

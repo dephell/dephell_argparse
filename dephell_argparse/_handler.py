@@ -1,12 +1,14 @@
+# built-in
 import os
 import re
 import sys
 from argparse import ArgumentParser, Namespace
-from logging import getLogger
-from typing import Optional, IO, Iterable
 from inspect import getdoc
+from logging import getLogger
 from textwrap import dedent
+from typing import IO, Iterable, Optional
 
+# app
 from ._cached_property import cached_property
 
 
