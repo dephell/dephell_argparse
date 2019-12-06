@@ -1,13 +1,77 @@
 # built-in
 import argparse
+import os
 import sys
 from types import MappingProxyType
-from typing import IO, Dict, Optional, Sequence
+from typing import IO, Dict, Optional, Sequence, Type
 
 # app
 from ._colors import Fore
 from ._command import Command
 from ._handler import CommandHandler
+
+
+# wider terminal for modern ages
+DEFAULT_WIDTH = int(os.environ.get('COLUMNS', 90))
+
+
+class Formatter(argparse.HelpFormatter):
+    modifier = 10
+
+    # copy-paste of the original function
+    # but with colors support in the action name
+    def _format_action(self, action):
+        # determine the required width and the entry label
+        help_position = min(self._action_max_length + 2,
+                            self._max_help_position)
+        help_width = max(self._width - help_position, 11)
+        action_width = help_position - self._current_indent - 2
+        action_header = self._format_action_invocation(action)
+
+        # --- patch start --- #
+        # colors support ---
+        if '\x1b[' in action_header:
+            help_position -= self.modifier
+        # --- patch end --- #
+
+        # no help; start on same line and add a final newline
+        if not action.help:
+            tup = self._current_indent, '', action_header
+            action_header = '%*s%s\n' % tup
+
+        # short action name; start on the same line and pad two spaces
+        elif len(action_header) <= action_width:
+            tup = self._current_indent, '', action_width, action_header
+            action_header = '%*s%-*s  ' % tup
+            indent_first = 0
+
+        # long action name; start on the next line
+        else:
+            tup = self._current_indent, '', action_header
+            action_header = '%*s%s\n' % tup
+            indent_first = help_position
+
+        # collect the pieces of the action help
+        parts = [action_header]
+
+        # if there was help for the action, add lines of help text
+        if action.help:
+            help_text = self._expand_help(action)
+            help_lines = self._split_lines(help_text, help_width)
+            parts.append('%*s%s\n' % (indent_first, '', help_lines[0]))
+            for line in help_lines[1:]:
+                parts.append('%*s%s\n' % (help_position, '', line))
+
+        # or add a newline if the description doesn't end with one
+        elif not action_header.endswith('\n'):
+            parts.append('\n')
+
+        # if there are any sub-actions, add their help as well
+        for subaction in self._iter_indented_subactions(action):
+            parts.append(self._format_action(subaction))
+
+        # return a single string
+        return self._join_parts(parts)
 
 
 class Parser(argparse.ArgumentParser):
@@ -18,6 +82,7 @@ class Parser(argparse.ArgumentParser):
         guesses='POSSIBLE COMMANDS',
         url='DOCS: ',
         description='DESCRIPTION: ',
+        epilog='SEE ALSO: ',
     ))
     codes = MappingProxyType(dict(
         help=0,
@@ -26,11 +91,17 @@ class Parser(argparse.ArgumentParser):
         fail=2,
     ))
 
-    def __init__(self, *, url: str = None, stream: IO = sys.stderr, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, *,
+                 url: str = None,
+                 stream: IO = sys.stderr,
+                 width: int = DEFAULT_WIDTH,
+                 formatter_class: Type[argparse.HelpFormatter] = Formatter,
+                 **kwargs):
         self.url = url
+        self.width = width
         self.stream = stream
         self._handlers = dict()  # type: Dict[str, CommandHandler]
+        super().__init__(formatter_class=formatter_class, **kwargs)
 
     def _print_message(self, message: str, file: IO = None) -> None:
         if not message:
@@ -90,13 +161,18 @@ class Parser(argparse.ArgumentParser):
             formatter.add_arguments(action_group._group_actions)
             formatter.end_section()
         self._format_commands(formatter=formatter, command=command)
-        formatter.add_text(self.epilog)
+        if self.epilog:
+            formatter.add_text(colorize(self.prefixes['epilog']) + self.epilog)
         return formatter.format_help()
 
     def _get_formatter(self) -> argparse.HelpFormatter:
-        formatter = super()._get_formatter()
-        formatter._width = 120
-        return formatter
+        return self.formatter_class(
+            prog=self.prog,
+            # allow to specify width
+            width=self.width,
+            # give more space for command name
+            max_help_position=36,
+        )
 
     def _format_commands(self, formatter: argparse.HelpFormatter,
                          command: Command = None) -> None:
@@ -149,7 +225,7 @@ class Parser(argparse.ArgumentParser):
             self._print_message(self.format_help())
             return self.codes['help']
 
-        # rewrite command to get help about command
+        # rewrite argv to get help about command
         if len(argv) >= 1 and argv[0] in ('--help', 'help'):
             argv = list(argv[1:]) + ['--help']
 

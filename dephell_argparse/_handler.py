@@ -57,6 +57,7 @@ class CommandHandler:
             usage=self.usage,
             description=self.description,
             url=self.url,
+            epilog=self.epilog,
         )
         return self.build_parser(parser=parser)
 
@@ -83,6 +84,10 @@ class CommandHandler:
     @cached_property
     def url(self) -> Optional[str]:
         return None
+
+    @cached_property
+    def epilog(self) -> Optional[str]:
+        return self.url
 
     @cached_property
     def usage(self) -> Optional[str]:

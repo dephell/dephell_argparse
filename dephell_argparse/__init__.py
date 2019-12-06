@@ -2,6 +2,7 @@
 """
 
 # app
+from ._command import Command
 from ._handler import CommandHandler
 from ._parser import Parser
 
@@ -9,6 +10,7 @@ from ._parser import Parser
 __version__ = '0.1.0'
 
 __all__ = [
+    'Command',
     'CommandHandler',
     'Parser',
 ]
