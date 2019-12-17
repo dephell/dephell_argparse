@@ -21,7 +21,9 @@ class CommandHandler:
     argv = None
 
     def __init__(self, *, handler=None, argv: Iterable[str] = None, **kwargs):
-        self.__dict__.update()
+        for key, value in kwargs.items():
+            if value is not None:
+                setattr(self, key, value)
         self.handler = handler
         if argv is not None:
             self.argv = tuple(argv)
@@ -37,7 +39,7 @@ class CommandHandler:
 
     def __call__(self) -> bool:
         if self.handler is not None:
-            return self.handler(self.argv)
+            return self.handler(self.args)
         raise NotImplementedError
 
     # helpers for handler
