@@ -1,7 +1,6 @@
 [tool.dephell.main]
 from = {format = "flit", path = "pyproject.toml"}
 to = {format = "setuppy", path = "setup.py"}
-command = "python -m flakehell lint"
 
 [tool.dephell.flake8]
 from = {format = "pip", path = "requirements-flake.txt"}
@@ -10,7 +9,7 @@ command = "flake8"
 
 [tool.dephell.pytest]
 from = {format = "flit", path = "pyproject.toml"}
-command = "python -m pytest tests/"
+command = "pytest tests/"
 
 [tool.dephell.typing]
 from = {format = "flit", path = "pyproject.toml"}
