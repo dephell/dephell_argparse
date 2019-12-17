@@ -22,19 +22,15 @@ script:
 
 matrix:
   include:
-
     - python: "3.6"
-      env: ENV=main
+      env: ENV=pytest
     - python: "3.7"
-      env: ENV=main
+      env: ENV=pytest
     - python: "3.8"
-      env: ENV=main
+      env: ENV=pytest
 
     - python: "3.7"
       env: ENV=flake8
-
-    - python: "3.7"
-      env: ENV=pytest
 
     - python: "3.7"
       env: ENV=typing
