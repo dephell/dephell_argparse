@@ -22,7 +22,7 @@ class Command:
 
     @cached_property
     def words(self) -> int:
-        return len(self.match.split())
+        return len((self.match or '').split())
 
     @property
     def argv(self) -> Tuple[str, ...]:
